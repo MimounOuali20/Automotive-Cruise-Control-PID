@@ -1,0 +1,145 @@
+%% 02_plot_results.m - Professional Graphics for LinkedIn
+% Ce script utilise les données exportées par le bloc "Visualization & Data Logging"
+
+% Vérification si les données existent (gestion du préfixe 'out.')
+if exist('out','var')
+    s = out;
+else
+    s = struct('ref_logged', ref_logged, 'actual_logged', actual_logged, ...
+               'error_logged', error_logged, 'force_logged', force_logged, ...
+               'grade_logged', grade_logged, 'aero_logged', aero_logged, ...
+               'grade_force_logged', grade_force_logged);
+end
+
+% 1. PERFORMANCE DE SUIVI DE VITESSE
+figure('Color', 'w', 'Position', [100 100 800 500]);
+plot(s.ref_logged.Time, s.ref_logged.Data, 'k--', 'LineWidth', 2); hold on;
+plot(s.actual_logged.Time, s.actual_logged.Data, 'Color', [0 0.447 0.741], 'LineWidth', 2.5);
+grid on;
+xlabel('Temps (s)'); ylabel('Vitesse (km/h)');
+title('Performance du Régulateur de Vitesse (PID)');
+legend('Consigne (Reference)', 'Vitesse Réelle (Actual)', 'Location', 'best');
+saveas(gcf, '01_speed_tracking_result.png');
+
+% 2. ERREUR DE RÉGULATION
+figure('Color', 'w', 'Position', [150 150 800 300]);
+plot(s.error_logged.Time, s.error_logged.Data, 'r', 'LineWidth', 1.5);
+grid on;
+xlabel('Temps (s)'); ylabel('Erreur (km/h)');
+title('Erreur de Suivi de Vitesse (V_{ref} - V_{meas})');
+saveas(gcf, '02_speed_error_result.png');
+
+% 3. COMMANDE DE FORCE (ACTIONNEUR)
+figure('Color', 'w', 'Position', [200 200 800 400]);
+plot(s.force_logged.Time, s.force_logged.Data, 'Color', [0.466 0.674 0.188], 'LineWidth', 2);
+grid on;
+xlabel('Temps (s)'); ylabel('Force (N)');
+title('Commande de Force de l''Actionneur');
+saveas(gcf, '03_force_command_result.png');
+
+% 4. PROFIL DE PENTE ET FORCES RÉSISTANTES
+figure('Color', 'w', 'Position', [250 250 800 500]);
+subplot(2,1,1);
+plot(s.grade_logged.Time, s.grade_logged.Data, 'Color', [0.85 0.325 0.098], 'LineWidth', 2);
+grid on; title('Profil de Pente de la Route'); ylabel('Pente (deg)');
+subplot(2,1,2);
+plot(s.aero_logged.Time, s.aero_logged.Data, 'LineWidth', 1.5); hold on;
+plot(s.grade_force_logged.Time, s.grade_force_logged.Data, 'LineWidth', 1.5);
+grid on; title('Forces de Charge (Road Loads)'); 
+ylabel('Force (N)'); legend('Trainée Aéro', 'Force de Pente');
+saveas(gcf, '04_road_load_analysis.png');
+
+disp('Toutes les figures professionnelles ont été exportées avec succès !');
+%% 03_run_animation.m - Visualisation Dynamique pour LinkedIn
+% Ce script crée une animation 2D basée sur vos résultats de simulation.
+
+% 1. Récupération des données
+if exist('out','var')
+    time = out.actual_logged.Time;
+    v_kmh = out.actual_logged.Data;
+    grade_deg = out.grade_logged.Data;
+else
+    time = actual_logged.Time;
+    v_kmh = actual_logged.Data;
+    grade_deg = grade_logged.Data;
+end
+
+% 2. Calcul de la position (Intégration de la vitesse)
+v_ms = v_kmh / 3.6; % Conversion en m/s 
+dist = cumtrapz(time, v_ms); % Distance parcourue
+
+% 3. Configuration de la figure d'animation
+hFig = figure('Color', 'w', 'Name', 'Simulink Cruise Control Animation');
+ax = axes('Parent', hFig);
+hold on; grid on;
+axis equal;
+xlabel('Position Horizontale (m)');
+ylabel('Altitude (m)');
+
+% 4. Création des objets graphiques
+% Dessin simplifié de la voiture (un rectangle et deux roues)
+car_body = rectangle('Position', [0, 0, 4, 1.5], 'FaceColor', [0 0.447 0.741], 'Curvature', 0.2);
+wheel1 = distinction_circle(0.8, 0, 0.4); % Fonction personnalisée ci-dessous
+wheel2 = distinction_circle(3.2, 0, 0.4);
+
+% Texte d'information
+txt_info = text(0, 0, '', 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', 'w');
+
+% 5. Boucle d'animation
+disp('Démarrage de l''animation...');
+for i = 1:10:length(time) % On affiche un point sur 10 pour la fluidité
+    % Calcul de l'altitude basée sur la pente (approximation locale)
+    slope = tand(grade_deg(i));
+    y_pos = dist(i) * slope;
+
+    % Mise à jour de la position de la voiture
+    set(car_body, 'Position', [dist(i), y_pos, 4, 1.5]);
+
+    % Mise à jour du texte
+    str = sprintf('Temps: %.1fs\nVitesse: %.1f km/h\nPente: %.1f°', ...
+        time(i), v_kmh(i), grade_deg(i));
+    set(txt_info, 'Position', [dist(i), y_pos + 4], 'String', str);
+
+    % Ajustement de la caméra pour suivre la voiture
+    set(ax, 'XLim', [dist(i)-20, dist(i)+60], 'YLim', [y_pos-10, y_pos+30]);
+
+    drawnow;
+    if ~ishandle(hFig), break; end % Arrêt si on ferme la fenêtre
+end
+disp('Animation terminée.');
+
+function h = distinction_circle(x, y, r)
+th = 0:pi/50:2*pi;
+xunit = r * cos(th) + x;
+yunit = r * sin(th) + y;
+h = fill(xunit, yunit, [0.2 0.2 0.2]);
+end
+clear; clc; close all;
+%% Vehicle parameters
+m = 1200;              % Vehicle mass [kg]
+g = 9.81;              % Gravity [m/s^2]
+rho = 1.225;           % Air density [kg/m^3]
+Cd = 0.32;             % Drag coefficient
+A = 2.2;               % Frontal area [m^2]
+Crr = 0.015;           % Rolling resistance coefficient
+%% Road load parameters
+Kdrag = 0.5 * rho * Cd * A;   % Aerodynamic drag coefficient
+Froll = m * g * Crr;          % Rolling resistance force [N]
+%% PID controller parameters
+Kp = 800;
+Ki = 40;
+Kd = 0;
+%% Actuator limits
+Fmax = 3000;           % Maximum traction force [N]
+Fmin = -4000;          % Maximum braking force [N]
+%% Simulation time
+Tsim = 60;
+%% Reference speed profile [km/h]
+time_ref = [0 5 5 25 25 40 40 60]';
+speed_ref = [0 0 80 80 50 50 100 100]';
+ref_speed = timeseries(speed_ref, time_ref);
+%% Road grade profile [deg]
+time_grade = [0 15 15 30 30 45 45 60]';
+grade_value = [0 0 5 5 -3 -3 0 0]';
+road_grade = timeseries(grade_value, time_grade);
+disp('Cruise control parameters loaded successfully.');
