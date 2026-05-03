@@ -1,55 +1,3 @@
-%% 02_plot_results.m - Professional Graphics for LinkedIn
-% Ce script utilise les données exportées par le bloc "Visualization & Data Logging"
-
-% Vérification si les données existent (gestion du préfixe 'out.')
-if exist('out','var')
-    s = out;
-else
-    s = struct('ref_logged', ref_logged, 'actual_logged', actual_logged, ...
-               'error_logged', error_logged, 'force_logged', force_logged, ...
-               'grade_logged', grade_logged, 'aero_logged', aero_logged, ...
-               'grade_force_logged', grade_force_logged);
-end
-
-% 1. PERFORMANCE DE SUIVI DE VITESSE
-figure('Color', 'w', 'Position', [100 100 800 500]);
-plot(s.ref_logged.Time, s.ref_logged.Data, 'k--', 'LineWidth', 2); hold on;
-plot(s.actual_logged.Time, s.actual_logged.Data, 'Color', [0 0.447 0.741], 'LineWidth', 2.5);
-grid on;
-xlabel('Temps (s)'); ylabel('Vitesse (km/h)');
-title('Performance du Régulateur de Vitesse (PID)');
-legend('Consigne (Reference)', 'Vitesse Réelle (Actual)', 'Location', 'best');
-saveas(gcf, '01_speed_tracking_result.png');
-
-% 2. ERREUR DE RÉGULATION
-figure('Color', 'w', 'Position', [150 150 800 300]);
-plot(s.error_logged.Time, s.error_logged.Data, 'r', 'LineWidth', 1.5);
-grid on;
-xlabel('Temps (s)'); ylabel('Erreur (km/h)');
-title('Erreur de Suivi de Vitesse (V_{ref} - V_{meas})');
-saveas(gcf, '02_speed_error_result.png');
-
-% 3. COMMANDE DE FORCE (ACTIONNEUR)
-figure('Color', 'w', 'Position', [200 200 800 400]);
-plot(s.force_logged.Time, s.force_logged.Data, 'Color', [0.466 0.674 0.188], 'LineWidth', 2);
-grid on;
-xlabel('Temps (s)'); ylabel('Force (N)');
-title('Commande de Force de l''Actionneur');
-saveas(gcf, '03_force_command_result.png');
-
-% 4. PROFIL DE PENTE ET FORCES RÉSISTANTES
-figure('Color', 'w', 'Position', [250 250 800 500]);
-subplot(2,1,1);
-plot(s.grade_logged.Time, s.grade_logged.Data, 'Color', [0.85 0.325 0.098], 'LineWidth', 2);
-grid on; title('Profil de Pente de la Route'); ylabel('Pente (deg)');
-subplot(2,1,2);
-plot(s.aero_logged.Time, s.aero_logged.Data, 'LineWidth', 1.5); hold on;
-plot(s.grade_force_logged.Time, s.grade_force_logged.Data, 'LineWidth', 1.5);
-grid on; title('Forces de Charge (Road Loads)'); 
-ylabel('Force (N)'); legend('Trainée Aéro', 'Force de Pente');
-saveas(gcf, '04_road_load_analysis.png');
-
-disp('Toutes les figures professionnelles ont été exportées avec succès !');
 %% 03_run_animation.m - Visualisation Dynamique pour LinkedIn
 % Ce script crée une animation 2D basée sur vos résultats de simulation.
 
@@ -143,3 +91,56 @@ time_grade = [0 15 15 30 30 45 45 60]';
 grade_value = [0 0 5 5 -3 -3 0 0]';
 road_grade = timeseries(grade_value, time_grade);
 disp('Cruise control parameters loaded successfully.');
+
+%% 02_plot_results.m - Professional Graphics for LinkedIn
+% Ce script utilise les données exportées par le bloc "Visualization & Data Logging"
+
+% Vérification si les données existent (gestion du préfixe 'out.')
+if exist('out','var')
+    s = out;
+else
+    s = struct('ref_logged', ref_logged, 'actual_logged', actual_logged, ...
+               'error_logged', error_logged, 'force_logged', force_logged, ...
+               'grade_logged', grade_logged, 'aero_logged', aero_logged, ...
+               'grade_force_logged', grade_force_logged);
+end
+
+% 1. PERFORMANCE DE SUIVI DE VITESSE
+figure('Color', 'w', 'Position', [100 100 800 500]);
+plot(s.ref_logged.Time, s.ref_logged.Data, 'k--', 'LineWidth', 2); hold on;
+plot(s.actual_logged.Time, s.actual_logged.Data, 'Color', [0 0.447 0.741], 'LineWidth', 2.5);
+grid on;
+xlabel('Temps (s)'); ylabel('Vitesse (km/h)');
+title('Performance du Régulateur de Vitesse (PID)');
+legend('Consigne (Reference)', 'Vitesse Réelle (Actual)', 'Location', 'best');
+saveas(gcf, '01_speed_tracking_result.png');
+
+% 2. ERREUR DE RÉGULATION
+figure('Color', 'w', 'Position', [150 150 800 300]);
+plot(s.error_logged.Time, s.error_logged.Data, 'r', 'LineWidth', 1.5);
+grid on;
+xlabel('Temps (s)'); ylabel('Erreur (km/h)');
+title('Erreur de Suivi de Vitesse (V_{ref} - V_{meas})');
+saveas(gcf, '02_speed_error_result.png');
+
+% 3. COMMANDE DE FORCE (ACTIONNEUR)
+figure('Color', 'w', 'Position', [200 200 800 400]);
+plot(s.force_logged.Time, s.force_logged.Data, 'Color', [0.466 0.674 0.188], 'LineWidth', 2);
+grid on;
+xlabel('Temps (s)'); ylabel('Force (N)');
+title('Commande de Force de l''Actionneur');
+saveas(gcf, '03_force_command_result.png');
+
+% 4. PROFIL DE PENTE ET FORCES RÉSISTANTES
+figure('Color', 'w', 'Position', [250 250 800 500]);
+subplot(2,1,1);
+plot(s.grade_logged.Time, s.grade_logged.Data, 'Color', [0.85 0.325 0.098], 'LineWidth', 2);
+grid on; title('Profil de Pente de la Route'); ylabel('Pente (deg)');
+subplot(2,1,2);
+plot(s.aero_logged.Time, s.aero_logged.Data, 'LineWidth', 1.5); hold on;
+plot(s.grade_force_logged.Time, s.grade_force_logged.Data, 'LineWidth', 1.5);
+grid on; title('Forces de Charge (Road Loads)'); 
+ylabel('Force (N)'); legend('Trainée Aéro', 'Force de Pente');
+saveas(gcf, '04_road_load_analysis.png');
+
+disp('Toutes les figures professionnelles ont été exportées avec succès !');
